@@ -1,7 +1,8 @@
 ---
-- name: Deploy NGINX with 2 replicas and validate deployment on OpenShift
+- name: Deploy NGINX (unprivileged) with 2 replicas and validate deployment on OpenShift
   hosts: localhost
   gather_facts: false
+
   vars:
     ocp_username: "{{ ansible_user }}"
     ocp_password: "{{ ansible_password }}"
@@ -9,7 +10,7 @@
     ocp_namespace: "nginx-demo"
 
   tasks:
-    # Step 1: Authenticate to OpenShift and get API token
+    # 1) Authenticate and fetch API token
     - name: Authenticate to OCP and generate token
       redhat.openshift.openshift_auth:
         username: "{{ ocp_username }}"
@@ -18,18 +19,18 @@
         validate_certs: no
       register: openshift_auth_results
 
-    # Step 2: Ensure the namespace exists
-    - name: Create project/namespace if not exists
+    # 2) Ensure the namespace/project exists
+    - name: Create project/namespace if it does not exist
       kubernetes.core.k8s:
         api_version: v1
         kind: Namespace
         name: "{{ ocp_namespace }}"
         state: present
-        api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
         host: "{{ ocp_api }}"
+        api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
 
-    # Step 3: Deploy NGINX with 2 replicas
-    - name: Deploy NGINX with 2 replicas
+    # 3) Deploy NGINX (unprivileged) with 2 replicas
+    - name: Deploy NGINX (unprivileged) with 2 replicas
       kubernetes.core.k8s:
         state: present
         definition:
@@ -50,14 +51,14 @@
               spec:
                 containers:
                   - name: nginx
-                    image: nginx:latest
+                    image: "nginxinc/nginx-unprivileged:stable"
                     ports:
-                      - containerPort: 80
-        api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
+                      - containerPort: 8080        # image listens on 8080
         host: "{{ ocp_api }}"
+        api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
 
-    # Step 4: Expose NGINX deployment as a service
-    - name: Expose NGINX deployment as a service
+    # 4) Expose the Deployment with a ClusterIP Service
+    - name: Expose NGINX deployment as a ClusterIP service
       kubernetes.core.k8s:
         state: present
         definition:
@@ -71,26 +72,26 @@
               app: nginx
             ports:
               - protocol: TCP
-                port: 80
-                targetPort: 80
+                port: 80          # service port inside the cluster
+                targetPort: 8080  # pod’s container port
             type: ClusterIP
-        api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
         host: "{{ ocp_api }}"
+        api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
 
-    # Step 5: Validation - Get pods in the namespace (like 'oc get pods -n nginx-demo')
+    # 5) Validation — list pods in the namespace
     - name: Get pods in nginx-demo namespace
       kubernetes.core.k8s_info:
         api_version: v1
         kind: Pod
         namespace: "{{ ocp_namespace }}"
-        api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
         host: "{{ ocp_api }}"
+        api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
       register: nginx_pods
 
-    - name: Show pod status in nginx-demo namespace
+    - name: Display pod status
       ansible.builtin.debug:
         msg: |
           Pods in namespace '{{ ocp_namespace }}':
           {% for pod in nginx_pods.resources %}
-            - Name: {{ pod.metadata.name }}, Status: {{ pod.status.phase }}
+            - Name: {{ pod.metadata.name }}, Phase: {{ pod.status.phase }}
           {% endfor %}

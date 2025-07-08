@@ -7,7 +7,8 @@
     ocp_username: "{{ ansible_user }}"
     ocp_password: "{{ ansible_password }}"
     ocp_api: "{{ ocp_api_host | default('localhost') }}"
-    ocp_namespace: "nginx-demo"
+    ocp_namespace: "{{ ocp_namespace | default('nginx-demo') }}"
+    num_replica: "{{ num_replica: | default('2') }}"
 
   tasks:
     # 1) Authenticate and fetch API token
@@ -40,7 +41,7 @@
             name: nginx-deployment
             namespace: "{{ ocp_namespace }}"
           spec:
-            replicas: 2
+            replicas: "{{ num_replica }}"
             selector:
               matchLabels:
                 app: nginx
@@ -53,7 +54,7 @@
                   - name: nginx
                     image: "nginxinc/nginx-unprivileged:stable"
                     ports:
-                      - containerPort: 8080        # image listens on 8080
+                      - containerPort: 8080 # image listens on 8080
         host: "{{ ocp_api }}"
         api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
 
@@ -72,8 +73,8 @@
               app: nginx
             ports:
               - protocol: TCP
-                port: 80          # service port inside the cluster
-                targetPort: 8080  # pod’s container port
+                port: 80 # service port inside the cluster
+                targetPort: 8080 # pod’s container port
             type: ClusterIP
         host: "{{ ocp_api }}"
         api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"

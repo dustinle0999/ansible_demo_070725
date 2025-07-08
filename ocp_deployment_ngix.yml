@@ -1,5 +1,5 @@
 ---
-- name: Deploy NGINX (unprivileged) with 2 replicas and validate deployment on OpenShift
+- name: Deploy NGINX (unprivileged) with X replicas and validate deployment on OpenShift
   hosts: localhost
   gather_facts: false
 
@@ -30,8 +30,8 @@
         host: "{{ ocp_api }}"
         api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
 
-    # 3) Deploy NGINX (unprivileged) with 2 replicas
-    - name: Deploy NGINX (unprivileged) with 2 replicas
+    # 3) Deploy NGINX (unprivileged) with X replicas
+    - name: Deploy NGINX (unprivileged) with X replicas
       kubernetes.core.k8s:
         state: present
         definition:

@@ -59,6 +59,7 @@ payload = {
     "playbook":      "ocp_deployment_ngix_v1.yml",
     "credential":    cred_users_id,
     "extra_vars": """
+ocp_api_host: https://api.itz-o8poc6.hub01-lb.techzone.ibm.com:6443
 """,
 }
 

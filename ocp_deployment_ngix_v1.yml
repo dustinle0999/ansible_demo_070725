@@ -51,7 +51,7 @@
                   - name: nginx
                     image: "nginxinc/nginx-unprivileged:stable"
                     ports:
-                      - containerPort: 8080 # for the image listens on 8080
+                      - containerPort: 8080 # the image listens on 8080
         host: "{{ ocp_api }}"
         api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
 
@@ -74,6 +74,21 @@
             type: ClusterIP
         host: "{{ ocp_api }}"
         api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
+
+    - name: Bounce NGINX deployment (scale 0 → num_replica)
+      kubernetes.core.k8s_scale:
+        api_version: apps/v1
+        kind: Deployment
+        name: nginx-deployment
+        namespace: "{{ ocp_namespace }}"
+        replicas: "{{ item }}"
+        wait: true
+        wait_timeout: 300
+        host: "{{ ocp_api }}"
+        api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
+      loop:
+        - 0
+        - "{{ num_replica }}"
 
     - name: Get pods in nginx-demo namespace
       kubernetes.core.k8s_info:

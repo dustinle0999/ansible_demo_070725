@@ -8,7 +8,7 @@
     ocp_password: "{{ ansible_password }}"
     ocp_api: "{{ ocp_api_host | default('localhost') }}"
     ocp_namespace: "nginx-demo"
-    num_replica: 2
+    num_replica: 3
 
   tasks:
     - name: Authenticate to OCP and generate token
